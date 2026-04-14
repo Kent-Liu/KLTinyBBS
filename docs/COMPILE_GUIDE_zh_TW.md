@@ -21,7 +21,7 @@
 ## 整合模組步驟
 
 1. **複製模組原始碼到官方目錄**
-   - 將本專案的 `src/modules/KLTinyBBS/` 整個資料夾，複製到官方韌體原始碼的 `src/modules/` 目錄下。
+   - 將本專案的 `src` 下的 `KLTinyBBS` 整個資料夾，複製到官方韌體原始碼的 `src/modules/` 目錄下，最後是 `src/modules/KLTinyBBS`。
 
 2. **在 `src/modules/Modules.cpp` 加入 include**
    - 開啟官方韌體專案中的 `src/modules/Modules.cpp`。
