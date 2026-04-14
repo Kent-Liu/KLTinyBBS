@@ -8,7 +8,7 @@
 
 ## 緣起
 
-早就知道有搭配 Python 的 BBS 開源工具，但外掛電腦或樹莓派在緊急或離網情境下停擺的機會實在太高。[LoBBS](https://github.com/fbartusch/LoBBS) 給了很大的啟發——直接讓節點本身 host BBS 才是正解。
+早就知道有搭配 Python 的 BBS 開源工具，但外掛電腦或樹莓派在緊急或離網情境下停擺的機會實在太高。[LoBBS](https://github.com/MeshEnvy/lobbs) 給了很大的啟發——直接讓節點本身 host BBS 才是正解。
 
 仔細研究 LoBBS 後，發現它的儲存設計對 nRF52 系列不太合適，頻繁寫入容易造成 Flash 過度磨損，進而影響硬體壽命。於是在致敬 LoBBS 帳號、郵件、新聞功能概念的基礎上，重新設計了這個模組（**非 fork 自 LoBBS**），加入更適合嵌入式環境的儲存機制，讓 nRF52 與 ESP32 都能安心長期運作。
 
