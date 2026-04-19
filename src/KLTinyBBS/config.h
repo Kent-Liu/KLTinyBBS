@@ -128,7 +128,7 @@
 
 #ifndef KLTINYBBS_MODULE_VERSION_STRING
 /** Human-readable module version string sent in banners / diagnostics. */
-#define KLTINYBBS_MODULE_VERSION_STRING "0.9.0"
+#define KLTINYBBS_MODULE_VERSION_STRING "0.9.1"
 #endif
 
 #ifndef KLTINYBBS_MAX_RESPONSE
@@ -169,6 +169,15 @@
 #ifndef KLTINYBBS_LIST_PREVIEW_LINES
 /** Number of preview lines shown per list entry where applicable. */
 #define KLTINYBBS_LIST_PREVIEW_LINES 5
+#endif
+
+#ifndef KLTINYBBS_DEDUP_CACHE_SIZE
+/**
+ * Number of recent packet keys kept for duplicate filtering in KLTinyBBS.
+ * The module stores (from, id) pairs in a fixed ring buffer and drops packets
+ * already seen in this window. Smaller value reduces RAM usage.
+ */
+#define KLTINYBBS_DEDUP_CACHE_SIZE 24
 #endif
 
 /* =============================================================================

@@ -65,9 +65,9 @@ const char* const HelpLoggedIn =
     "@用戶私訊 /users列表\n/?:說明";
 const char* const HelpAdmin =
     "/admin bye:離開管理\n/admin pass 新密:改管理密\n"
-    "/sync:User與Pref寫入flash\n"
+    "/sync:寫入flash\n"
     "/reset 管理密:清檔如首次\n"
-    "/delete post編號:可刪任何公告\n"
+    "/delete post 編號:刪公告\n"
     "/welcome 文字:問候\n/private pass|lock|unlock|status\n/?:說明";
 
 #else  /* KLTINYBBS_LANG_EN (default) */

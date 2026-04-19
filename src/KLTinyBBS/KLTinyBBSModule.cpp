@@ -67,6 +67,14 @@ static uint32_t gAdminNodes[kMaxSessionSlots] = {0};
 struct UnlockSlot { uint32_t node = 0; uint32_t expiry = 0; };
 static UnlockSlot gUnlockSlots[kMaxSessionSlots];
 
+struct DedupEntry {
+    uint32_t from = 0;
+    uint32_t id = 0;
+};
+static_assert(KLTINYBBS_DEDUP_CACHE_SIZE > 0, "KLTINYBBS_DEDUP_CACHE_SIZE must be > 0");
+static DedupEntry gRecentPacketKeys[KLTINYBBS_DEDUP_CACHE_SIZE];
+static size_t gRecentPacketWritePos = 0;
+
 static bool isNodeInAdminMode(uint32_t node) {
     for (size_t i = 0; i < kMaxSessionSlots; i++)
         if (gAdminNodes[i] == node) return true;
@@ -102,6 +110,20 @@ static void setNodeUnlocked(uint32_t node, uint32_t expiry) {
 static void refreshUnlockExpiry(uint32_t node, uint32_t expiry) {
     for (size_t i = 0; i < kMaxSessionSlots; i++)
         if (gUnlockSlots[i].node == node) { gUnlockSlots[i].expiry = expiry; return; }
+}
+
+// Return true if this packet key was seen recently; otherwise record it.
+static bool isDuplicatePacket(uint32_t from, uint32_t id) {
+    if (id == 0) return false;
+    for (size_t i = 0; i < KLTINYBBS_DEDUP_CACHE_SIZE; i++) {
+        if (gRecentPacketKeys[i].from == from && gRecentPacketKeys[i].id == id) {
+            return true;
+        }
+    }
+    gRecentPacketKeys[gRecentPacketWritePos].from = from;
+    gRecentPacketKeys[gRecentPacketWritePos].id = id;
+    gRecentPacketWritePos = (gRecentPacketWritePos + 1) % KLTINYBBS_DEDUP_CACHE_SIZE;
+    return false;
 }
 
 static void ensureStoresInited_() {
@@ -366,6 +388,10 @@ ProcessMessage KLTinyBBSModule::handleReceived(const meshtastic_MeshPacket& mp) 
     ensureStoresInited_();
 
     const uint32_t fromNode = getFrom(&mp);
+    if (isDuplicatePacket(fromNode, mp.id)) {
+        return ProcessMessage::CONTINUE;
+    }
+
     const size_t payloadLen = mp.decoded.payload.size;
     const uint8_t* payload = mp.decoded.payload.bytes;
 
@@ -477,6 +503,22 @@ ProcessMessage KLTinyBBSModule::handleReceived(const meshtastic_MeshPacket& mp) 
         float memPercent = memFreeKB / memTotalKB * 100.0f;
         len += snprintf(buffer + len, (size_t)(sizeof(buffer) - len), "MEM: (%.2f/%.2f KB, %.2f%% free)",
                         memFreeKB, memTotalKB, memPercent);
+#if defined(ARCH_NRF52)
+#if defined(EXTERNAL_FLASH_USE_QSPI)
+#if defined(EXTERNAL_FLASH_DEVICES)
+#define KLTINYBBS_QSPI_DEV_IMPL(x) #x
+#define KLTINYBBS_QSPI_DEV(x) KLTINYBBS_QSPI_DEV_IMPL(x)
+        len += snprintf(buffer + len, (size_t)(sizeof(buffer) - len), "\nQSPI: Y, %s",
+                         KLTINYBBS_QSPI_DEV(EXTERNAL_FLASH_DEVICES));
+#undef KLTINYBBS_QSPI_DEV
+#undef KLTINYBBS_QSPI_DEV_IMPL
+#else
+        len += snprintf(buffer + len, (size_t)(sizeof(buffer) - len), "\nQSPI: Y");
+#endif
+#else
+        len += snprintf(buffer + len, (size_t)(sizeof(buffer) - len), "\nQSPI: N");
+#endif
+#endif
         if (powerStatus && powerStatus->getHasBattery() && powerStatus->getBatteryVoltageMv() > 0) {
             int batMv = powerStatus->getBatteryVoltageMv();
             int batPct = powerStatus->getBatteryChargePercent();
@@ -493,39 +535,43 @@ ProcessMessage KLTinyBBSModule::handleReceived(const meshtastic_MeshPacket& mp) 
     nextToken(buf, bufLen + 1, &cmdStart, cmd, sizeof(cmd));
     stripTrailingCrLf(cmd);
 
-    // /clean messages | /clean users (hidden, for testing; not in /help)
-    if (strcmp(cmd, "clean") == 0) {
-        char sub[32] = {0};
-        nextToken(buf, bufLen + 1, &cmdStart, sub, sizeof(sub));
-        stripTrailingCrLf(sub);
-        if (strcmp(sub, "messages") == 0) {
-            if (gPm.clearStorage()) {
-                sendReplyStr(fromNode, kltinybbs::str::Ok);
-            } else {
-                sendReplyStr(fromNode, "Clean failed.");
-            }
-            return ProcessMessage::CONTINUE;
-        }
-        if (strcmp(sub, "users") == 0) {
-            for (int i = 0; i < KLTINYBBS_MAX_USERS; i++) nodeBoundToUserId[i] = 0;
-            if (gUsers.clearStorage()) {
-                sendReplyStr(fromNode, kltinybbs::str::Ok);
-            } else {
-                sendReplyStr(fromNode, "Clean failed.");
-            }
-            return ProcessMessage::CONTINUE;
-        }
-        if (strcmp(sub, "pref") == 0) {
-            if (gPref.clearStorage()) {
-                sendReplyStr(fromNode, kltinybbs::str::Ok);
-            } else {
-                sendReplyStr(fromNode, "Clean failed.");
-            }
-            return ProcessMessage::CONTINUE;
-        }
-        sendReplyStr(fromNode, "Usage: /clean messages|users|pref");
-        return ProcessMessage::CONTINUE;
-    }
+    /*
+     * /clean messages | /clean users | /clean pref
+     * Temporarily disabled by request. Keep the implementation commented out
+     * so it can be restored later if needed.
+     */
+    // if (strcmp(cmd, "clean") == 0) {
+    //     char sub[32] = {0};
+    //     nextToken(buf, bufLen + 1, &cmdStart, sub, sizeof(sub));
+    //     stripTrailingCrLf(sub);
+    //     if (strcmp(sub, "messages") == 0) {
+    //         if (gPm.clearStorage()) {
+    //             sendReplyStr(fromNode, kltinybbs::str::Ok);
+    //         } else {
+    //             sendReplyStr(fromNode, "Clean failed.");
+    //         }
+    //         return ProcessMessage::CONTINUE;
+    //     }
+    //     if (strcmp(sub, "users") == 0) {
+    //         for (int i = 0; i < KLTINYBBS_MAX_USERS; i++) nodeBoundToUserId[i] = 0;
+    //         if (gUsers.clearStorage()) {
+    //             sendReplyStr(fromNode, kltinybbs::str::Ok);
+    //         } else {
+    //             sendReplyStr(fromNode, "Clean failed.");
+    //         }
+    //         return ProcessMessage::CONTINUE;
+    //     }
+    //     if (strcmp(sub, "pref") == 0) {
+    //         if (gPref.clearStorage()) {
+    //             sendReplyStr(fromNode, kltinybbs::str::Ok);
+    //         } else {
+    //             sendReplyStr(fromNode, "Clean failed.");
+    //         }
+    //         return ProcessMessage::CONTINUE;
+    //     }
+    //     sendReplyStr(fromNode, "Usage: /clean messages|users|pref");
+    //     return ProcessMessage::CONTINUE;
+    // }
 
     // /sync (admin only, hidden): force UserStore and PrefStore dirty data to flash
     if (strcmp(cmd, "sync") == 0) {
