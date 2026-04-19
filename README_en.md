@@ -34,7 +34,7 @@ After studying LoBBS carefully, it became clear that its storage design is not w
 
 | Firmware Version | Hardware |
 |------------------|----------|
-| Meshtastic 2.7.15 | Heltec V3, Heltec WSL V3, Seeed T1000-E, Seeed XIAO nRF52 |
+| Meshtastic 2.7.15 | Heltec V4、Heltec V3、Heltec WSL V3、Seeed T1000-E、Seeed XIAO nRF52、Gat562 |
 
 If you test on other firmware versions or hardware and it works, please share your results! Open an Issue or PR.
 
