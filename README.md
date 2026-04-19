@@ -32,7 +32,7 @@
 
 | 韌體版本 | 硬體 |
 |----------|------|
-| Meshtastic 2.7.15 | Heltec V3、Heltec WSL V3、Seeed T1000-E、Seeed XIAO nRF52 |
+| Meshtastic 2.7.15 | Heltec V4、Heltec V3、Heltec WSL V3、Seeed T1000-E、Seeed XIAO nRF52、Gat562 |
 
 其他韌體版本或硬體若測試 OK，歡迎回饋！開 Issue 或 PR 都可以。
 
